@@ -185,4 +185,4 @@ trainItem2.txt
 output.txt
 *.pickle
 *.zip
-data
+data/
