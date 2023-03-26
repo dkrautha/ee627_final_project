@@ -6,6 +6,52 @@ from parsing import (
 )
 
 
+def search_weighted_avg_and_num_matches(
+    track_id: str,
+    user_id: str,
+    training_map: UserRatingHistoryMap,
+    track_map: TrackEntryMap,
+) -> float:
+    album_id, artist_id, genres = track_map[track_id]
+    user_rating_history = training_map[user_id]
+
+    weighted_rating_sum = 0
+    weighted_rating_count = 0
+    total_numer_of_ratings = 0
+    if track_id in user_rating_history:
+        TRACK_WEIGHT = 10
+        weighted_rating_sum += user_rating_history[track_id] * TRACK_WEIGHT
+        weighted_rating_count += TRACK_WEIGHT
+        total_numer_of_ratings += 1
+    elif album_id in user_rating_history:
+        ALBUM_WEIGHT = 7
+        weighted_rating_sum += user_rating_history[album_id] * ALBUM_WEIGHT
+        weighted_rating_count += ALBUM_WEIGHT
+        total_numer_of_ratings += 1
+    elif artist_id in user_rating_history:
+        ARTIST_WEIGHT = 3
+        weighted_rating_sum += user_rating_history[artist_id] * ARTIST_WEIGHT
+        weighted_rating_count += ARTIST_WEIGHT
+        total_numer_of_ratings += 1
+
+    if genres is not None:
+        for genre_id in genres:
+            if genre_id not in user_rating_history:
+                continue
+            GENRE_WEIGHT = 1
+            weighted_rating_sum += user_rating_history[genre_id] * GENRE_WEIGHT
+            weighted_rating_count += GENRE_WEIGHT
+            total_numer_of_ratings += 1
+
+    num_of_ratings_multiplier = 0.6 * total_numer_of_ratings
+
+    return (
+        num_of_ratings_multiplier * weighted_rating_sum / weighted_rating_count
+        if weighted_rating_count > 0
+        else -1
+    )
+
+
 def search_weighted_avg(
     track_id: str,
     user_id: str,
@@ -149,7 +195,7 @@ def main():
         for user_id, tracks in test_map.items():
             test_ratings = {track: 0.0 for track in tracks}
             for track_id in tracks:
-                test_ratings[track_id] = search_weighted_avg(
+                test_ratings[track_id] = search_weighted_avg_and_num_matches(
                     track_id, user_id, train_map, track_map
                 )
 
