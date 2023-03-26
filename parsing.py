@@ -90,7 +90,9 @@ def parse_album_entry(s: str) -> AlbumEntry:
 
 class UserRatingHistory(NamedTuple):
     user_id: str
-    items_to_ratings: dict[str, int]  # Could be Track, Genre, Artist, or Album|Training data is all Genres and Artists
+    items_to_ratings: dict[
+        str, int
+    ]  # Could be Track, Genre, Artist, or Album|Training data is all Genres and Artists
 
     def __hash__(self) -> int:
         return hash(self.user_id)
@@ -102,7 +104,7 @@ class UserRatingHistory(NamedTuple):
 
 
 def parse_user_rating_history(
-        user_id_and_num_tracks_str: str, iter: Iterator[str]
+    user_id_and_num_tracks_str: str, iter: Iterator[str]
 ) -> UserRatingHistory:
     user_id, num_tracks = user_id_and_num_tracks_str.split("|")
     num_tracks = int(num_tracks)
@@ -127,34 +129,44 @@ def parse_test_case(user_id_and_num_tracks_str: str, iter: Iterator[str]):
 
 def cache_exists() -> bool:
     return (
-            TRACK_CACHE_FILENAME.exists()
-            and ALBUM_CACHE_FILENAME.exists()
-            and GENRE_CACHE_FILENAME.exists()
-            and ARTIST_CACHE_FILENAME.exists()
-            and TRAIN_CACHE_FILENAME.exists()
-            and TEST_CACHE_FILENAME.exists()
+        TRACK_CACHE_FILENAME.exists()
+        and ALBUM_CACHE_FILENAME.exists()
+        and GENRE_CACHE_FILENAME.exists()
+        and ARTIST_CACHE_FILENAME.exists()
+        and TRAIN_CACHE_FILENAME.exists()
+        and TEST_CACHE_FILENAME.exists()
     )
 
 
 def load_lists() -> (
-        tuple[
-            dict[str, TrackEntry],
-            dict[str, AlbumEntry],
-            set[str],
-            set[str],
-            dict[str, UserRatingHistory],
-            set[TestCase],
-        ]
+    tuple[
+        dict[str, TrackEntry],
+        dict[str, AlbumEntry],
+        set[str],
+        set[str],
+        dict[str, UserRatingHistory],
+        set[TestCase],
+    ]
 ):
     if not cache_exists():
         print("generating cache")
         track_data = TRACK_FILENAME.read_text()
-        track_list = {track_entry.track_id: track_entry for track_entry in (parse_track_entry(line) for line in track_data.splitlines())}
+        track_list = {
+            track_entry.track_id: track_entry
+            for track_entry in (
+                parse_track_entry(line) for line in track_data.splitlines()
+            )
+        }
         track_pickle = pickle.dumps(track_list)
         TRACK_CACHE_FILENAME.write_bytes(track_pickle)
 
         album_data = ALBUM_FILENAME.read_text()
-        album_list = {album_entry.album_id: album_entry for album_entry in (parse_album_entry(line) for line in album_data.splitlines())}
+        album_list = {
+            album_entry.album_id: album_entry
+            for album_entry in (
+                parse_album_entry(line) for line in album_data.splitlines()
+            )
+        }
         album_pickle = pickle.dumps(album_list)
         ALBUM_CACHE_FILENAME.write_bytes(album_pickle)
 
@@ -169,7 +181,13 @@ def load_lists() -> (
         GENRE_CACHE_FILENAME.write_bytes(genre_pickle)
 
         train_data_iter = iter(TRAIN_FILENAME.read_text().splitlines())
-        train_list = {user_rating_history.user_id: user_rating_history for user_rating_history in (parse_user_rating_history(line, train_data_iter) for line in train_data_iter)}
+        train_list = {
+            user_rating_history.user_id: user_rating_history
+            for user_rating_history in (
+                parse_user_rating_history(line, train_data_iter)
+                for line in train_data_iter
+            )
+        }
         train_pickle = pickle.dumps(train_list)
         TRAIN_CACHE_FILENAME.write_bytes(train_pickle)
 
@@ -182,8 +200,12 @@ def load_lists() -> (
 
     else:
         print("loading from cache")
-        track_list: dict[str, TrackEntry] = pickle.loads(TRACK_CACHE_FILENAME.read_bytes())
-        album_list: dict[str, AlbumEntry] = pickle.loads(ALBUM_CACHE_FILENAME.read_bytes())
+        track_list: dict[str, TrackEntry] = pickle.loads(
+            TRACK_CACHE_FILENAME.read_bytes()
+        )
+        album_list: dict[str, AlbumEntry] = pickle.loads(
+            ALBUM_CACHE_FILENAME.read_bytes()
+        )
         artist_list: set[str] = pickle.loads(ARTIST_CACHE_FILENAME.read_bytes())
         genre_list: set[str] = pickle.loads(GENRE_CACHE_FILENAME.read_bytes())
         train_list: dict[str, UserRatingHistory] = pickle.loads(

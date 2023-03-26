@@ -1,9 +1,16 @@
 import parsing
-import numpy as np
+
+# import numpy as np
 
 
-def search(track: str, user: str, train_data_dict: dict[str, parsing.UserRatingHistory],
-           track_data_dict: dict[str, parsing.TrackEntry], album_set: set[str], genre_set: set[str]):
+def search(
+    track: str,
+    user: str,
+    train_data_dict: dict[str, parsing.UserRatingHistory],
+    track_data_dict: dict[str, parsing.TrackEntry],
+    album_set: set[str],
+    genre_set: set[str],
+):
     # Get all data about the track, will need artist, album, and genre ratings
     track_data = track_data_dict[track]
     # Get all ratings that the user has, will be compared to track_data
@@ -42,7 +49,9 @@ def search(track: str, user: str, train_data_dict: dict[str, parsing.UserRatingH
         weighted_rating_sum += items_rated[track_data.album_id] * ALBUM_WEIGHT
         weighted_rating_sum += ALBUM_WEIGHT
     # return this weighted sum
-    return weighted_rating_sum / weighted_rating_count if weighted_rating_count > 0 else -1
+    return (
+        weighted_rating_sum / weighted_rating_count if weighted_rating_count > 0 else -1
+    )
 
 
 def main():
@@ -71,7 +80,9 @@ def main():
                 elif item_rated in artist_list:
                     artist_count += 1
                     # print(f"{item_rated}: Artist")
-        print(f"{track_count} Tracks\n{genre_count} Genres\n{album_count} Albums\n{artist_count} Artists")
+        print(
+            f"{track_count} Tracks\n{genre_count} Genres\n{album_count} Albums\n{artist_count} Artists"
+        )
 
     ratings = {}
 
@@ -80,8 +91,17 @@ def main():
         for test_datum in test_list:
             test_ratings = {track: 0 for track in test_datum.tracks}
             for track in test_datum.tracks:
-                test_ratings[track] = search(track, test_datum.user_id, train_list, track_list, album_list, genre_list)
-            for i, track_rating in enumerate(sorted(test_ratings.items(), key=lambda x: x[1])):
+                test_ratings[track] = search(
+                    track,
+                    test_datum.user_id,
+                    train_list,
+                    track_list,
+                    album_list,
+                    genre_list,
+                )
+            for i, track_rating in enumerate(
+                sorted(test_ratings.items(), key=lambda x: x[1])
+            ):
                 if i < 3:
                     # ratings[test_datum.user_id + track_rating[0]] = 0
                     results_file.write(f"{test_datum.user_id}_{track_rating[0]},0")
