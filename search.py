@@ -1,113 +1,164 @@
-import parsing
+from parsing import (
+    Path,
+    TrackEntryMap,
+    UserRatingHistoryMap,
+    load_data,
+)
 
-# import numpy as np
 
+def search_weighted_avg(
+    track_id: str,
+    user_id: str,
+    training_map: UserRatingHistoryMap,
+    track_map: TrackEntryMap,
+) -> float:
+    album_id, artist_id, genres = track_map[track_id]
+    user_rating_history = training_map[user_id]
 
-def search(
-    track: str,
-    user: str,
-    train_data_dict: dict[str, parsing.UserRatingHistory],
-    track_data_dict: dict[str, parsing.TrackEntry],
-    album_set: set[str],
-    genre_set: set[str],
-):
-    # Get all data about the track, will need artist, album, and genre ratings
-    track_data = track_data_dict[track]
-    # Get all ratings that the user has, will be compared to track_data
-    user_data = train_data_dict[user]
-    # helper var to increase readability
-    track_genres = track_data.genres
-    # Used to calculate genre_rating_mean
-    genres_rated_count = genres_rated_sum = 0
-    # helper var to increase readability
-    items_rated = user_data.items_to_ratings
-    # for each genre, if it was rated, add it to the mean calculator
-    if track_genres is not None:
-        for track_genre in track_genres:
-            if track_genre not in items_rated:
-                continue
-            genres_rated_count += 1
-            genres_rated_sum += items_rated[track_genre]
-    track_artist = track_data.artist_id
-    # For each possible metric, if it was rated by this user, add them to the mean with the given weight
     weighted_rating_sum = 0
     weighted_rating_count = 0
-    if genres_rated_count > 0:
-        GENRE_WEIGHT = 2
-        weighted_rating_sum += genres_rated_sum * GENRE_WEIGHT
-        weighted_rating_count += genres_rated_count * GENRE_WEIGHT
-    if track_artist in items_rated:
-        ARTIST_WEIGHT = 1
-        weighted_rating_sum += items_rated[track_artist] * ARTIST_WEIGHT
-        weighted_rating_count += ARTIST_WEIGHT
-    if track in items_rated:
-        TRACK_WEIGHT = 20
-        weighted_rating_sum += items_rated[track] * TRACK_WEIGHT
+    if track_id in user_rating_history:
+        TRACK_WEIGHT = 10
+        weighted_rating_sum += user_rating_history[track_id] * TRACK_WEIGHT
         weighted_rating_count += TRACK_WEIGHT
-    if track_data.album_id in items_rated:
-        ALBUM_WEIGHT = 5
-        weighted_rating_sum += items_rated[track_data.album_id] * ALBUM_WEIGHT
-        weighted_rating_sum += ALBUM_WEIGHT
-    # return this weighted sum
+    elif album_id in user_rating_history:
+        ALBUM_WEIGHT = 7
+        weighted_rating_sum += user_rating_history[album_id] * ALBUM_WEIGHT
+        weighted_rating_count += ALBUM_WEIGHT
+    elif artist_id in user_rating_history:
+        ARTIST_WEIGHT = 3
+        weighted_rating_sum += user_rating_history[artist_id] * ARTIST_WEIGHT
+        weighted_rating_count += ARTIST_WEIGHT
+
+    if genres is not None:
+        for genre_id in genres:
+            if genre_id not in user_rating_history:
+                continue
+            GENRE_WEIGHT = 1
+            weighted_rating_sum += user_rating_history[genre_id] * GENRE_WEIGHT
+            weighted_rating_count += GENRE_WEIGHT
+
     return (
         weighted_rating_sum / weighted_rating_count if weighted_rating_count > 0 else -1
     )
 
 
+def search_total_sum(
+    track_id: str,
+    user_id: str,
+    training_map: UserRatingHistoryMap,
+    track_map: TrackEntryMap,
+) -> float:
+    album_id, artist_id, genres = track_map[track_id]
+    user_rating_history = training_map[user_id]
+
+    sum = 0
+    if track_id in user_rating_history:
+        sum += user_rating_history[track_id]
+    elif album_id in user_rating_history:
+        sum += user_rating_history[album_id]
+    elif artist_id in user_rating_history:
+        sum += user_rating_history[artist_id]
+
+    if genres is not None:
+        for genre_id in genres:
+            if genre_id not in user_rating_history:
+                continue
+            sum += user_rating_history[genre_id]
+
+    return sum
+
+
+def search_average(
+    track_id: str,
+    user_id: str,
+    training_map: UserRatingHistoryMap,
+    track_map: TrackEntryMap,
+) -> float:
+    album_id, artist_id, genres = track_map[track_id]
+    user_rating_history = training_map[user_id]
+
+    sum = 0
+    num_items = 0
+    if track_id in user_rating_history:
+        sum += user_rating_history[track_id]
+        num_items += 1
+    elif album_id in user_rating_history:
+        sum += user_rating_history[album_id]
+        num_items += 1
+    elif artist_id in user_rating_history:
+        sum += user_rating_history[artist_id]
+        num_items += 1
+
+    if genres is not None:
+        for genre_id in genres:
+            if genre_id not in user_rating_history:
+                continue
+            sum += user_rating_history[genre_id]
+            num_items += 1
+
+    return sum / num_items if num_items > 0 else -1
+
+
+def fun_data_statistics(track_map, album_map, artist_set, genre_set, train_map):
+    print("Data Available")
+    print(f"Tracks: {len(track_map)}")
+    print(f"Albums: {len(album_map)}")
+    print(f"Artists: {len(artist_set)}")
+    print(f"Genres: {len(genre_set)}\n")
+
+    print("Training Data Statistics")
+    times_tracks_were_rated = 0
+    times_albums_were_rated = 0
+    times_artists_were_rated = 0
+    times_genres_were_rated = 0
+    for _, ratings in train_map.items():
+        for item_id, _ in ratings.items():
+            if item_id in track_map:
+                times_tracks_were_rated += 1
+            elif item_id in album_map:
+                times_albums_were_rated += 1
+            elif item_id in artist_set:
+                times_artists_were_rated += 1
+            elif item_id in genre_set:
+                times_genres_were_rated += 1
+            else:
+                print(f"Unable to find {item_id} in tracks, albums, artists, or genres")
+                return
+
+    print(f"Times Tracks Were Rated: {times_tracks_were_rated}")
+    print(f"Times Albums Were Rated: {times_albums_were_rated}")
+    print(f"Times Artists Were Rated: {times_artists_were_rated}")
+    print(f"Times Genres Were Rated: {times_genres_were_rated}")
+    total_ratings = (
+        times_tracks_were_rated
+        + times_albums_were_rated
+        + times_artists_were_rated
+        + times_genres_were_rated
+    )
+    print(f"Total Ratings In System: {total_ratings} ")
+
+
 def main():
-    (
-        track_list,
-        album_list,
-        artist_list,
-        genre_list,
-        train_list,
-        test_list,
-    ) = parsing.load_lists()
-    # testing what training data is TODO: Remove
-    album_count = track_count = genre_count = artist_count = 0
-    if False:
-        for user_rating in train_list:
-            for item_rated in user_rating.items_to_ratings:
-                if item_rated in track_list:
-                    track_count += 1
-                    # print(f"{item_rated}: Track")
-                elif item_rated in genre_list:
-                    genre_count += 1
-                    # print(f"{item_rated}: Genre")
-                elif item_rated in album_list:
-                    album_count += 1
-                    # print(f"{item_rated}: Album")
-                elif item_rated in artist_list:
-                    artist_count += 1
-                    # print(f"{item_rated}: Artist")
-        print(
-            f"{track_count} Tracks\n{genre_count} Genres\n{album_count} Albums\n{artist_count} Artists"
-        )
+    RESULTS_PATH = Path("results.csv")
 
-    ratings = {}
+    track_map, _, _, _, train_map, test_map = load_data()
 
-    with open("results.csv", "w") as results_file:
+    with open(RESULTS_PATH, "w") as results_file:
         results_file.write("TrackID,Predictor\n")
-        for test_datum in test_list:
-            test_ratings = {track: 0 for track in test_datum.tracks}
-            for track in test_datum.tracks:
-                test_ratings[track] = search(
-                    track,
-                    test_datum.user_id,
-                    train_list,
-                    track_list,
-                    album_list,
-                    genre_list,
+        for user_id, tracks in test_map.items():
+            test_ratings = {track: 0.0 for track in tracks}
+            for track_id in tracks:
+                test_ratings[track_id] = search_weighted_avg(
+                    track_id, user_id, train_map, track_map
                 )
-            for i, track_rating in enumerate(
-                sorted(test_ratings.items(), key=lambda x: x[1])
-            ):
+
+            sorted_test_ratings = sorted(test_ratings.items(), key=lambda x: x[1])
+            for i, track_rating in enumerate(sorted_test_ratings):
                 if i < 3:
-                    # ratings[test_datum.user_id + track_rating[0]] = 0
-                    results_file.write(f"{test_datum.user_id}_{track_rating[0]},0")
+                    results_file.write(f"{user_id}_{track_rating[0]},0")
                 else:
-                    # ratings[test_datum.user_id + track_rating[0]] = 1
-                    results_file.write(f"{test_datum.user_id}_{track_rating[0]},1")
+                    results_file.write(f"{user_id}_{track_rating[0]},1")
                 results_file.write("\n")
 
 
