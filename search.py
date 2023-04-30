@@ -186,11 +186,36 @@ def fun_data_statistics(track_map, album_map, artist_set, genre_set, train_map):
 
 
 def main():
-    RESULTS_PATH = Path("results.csv")
+    (
+        track_list,
+        album_list,
+        artist_list,
+        genre_list,
+        train_list,
+        test_list,
+    ) = parsing.load_lists()
+    # testing what training data is TODO: Remove
+    album_count = track_count = genre_count = artist_count = 0
+    if True:
+        for user_rating in train_list.values():
+            for item_rated in user_rating.items_to_ratings:
+                if item_rated in track_list:
+                    track_count += 1
+                    # print(f"{item_rated}: Track")
+                elif item_rated in genre_list:
+                    genre_count += 1
+                    # print(f"{item_rated}: Genre")
+                elif item_rated in album_list:
+                    album_count += 1
+                    # print(f"{item_rated}: Album")
+                elif item_rated in artist_list:
+                    artist_count += 1
+                    # print(f"{item_rated}: Artist")
+        print(f"{track_count} Tracks\n{genre_count} Genres\n{album_count} Albums\n{artist_count} Artists")
 
     track_map, _, _, _, train_map, test_map = load_data()
 
-    with open(RESULTS_PATH, "w") as results_file:
+    with open("submissions/results.csv", "w") as results_file:
         results_file.write("TrackID,Predictor\n")
         for user_id, tracks in test_map.items():
             test_ratings = {track: 0.0 for track in tracks}
