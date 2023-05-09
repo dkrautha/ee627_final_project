@@ -36,12 +36,11 @@ class TrackEntry(NamedTuple):
 
 def parse_track_entry(s: str) -> tuple[str, TrackEntry]:
     split = s.strip().split("|")
-    id = split[0]
+    track_id = split[0]
     album = split[1]
     artist = split[2]
 
-    return id, TrackEntry(
-        # id,
+    return track_id, TrackEntry(
         album if album != "None" else None,
         artist if artist != "None" else None,
         tuple(split[3:]) if len(split) > 3 else None,
@@ -55,11 +54,10 @@ class AlbumEntry(NamedTuple):
 
 def parse_album_entry(s: str) -> tuple[str, AlbumEntry]:
     split = s.strip().split("|")
-    id = split[0]
+    album_id = split[0]
     artist = split[1]
 
-    return id, AlbumEntry(
-        # id,
+    return album_id, AlbumEntry(
         artist if artist != "None" else None,
         tuple(split[2:]) if len(split) > 2 else None,
     )
@@ -67,12 +65,12 @@ def parse_album_entry(s: str) -> tuple[str, AlbumEntry]:
 
 def parse_user_rating_history(
     user_id_and_num_tracks_str: str,
-    iter: Iterator[str],
+    lines_iter: Iterator[str],
 ) -> tuple[str, dict[str, int]]:
     user_id, num_tracks = user_id_and_num_tracks_str.split("|")
     num_tracks = int(num_tracks)
 
-    unparsed_entries = [next(iter).split("\t") for _ in range(num_tracks)]
+    unparsed_entries = [next(lines_iter).split("\t") for _ in range(num_tracks)]
     tracks_to_ratings = {entry[0]: int(entry[1]) for entry in unparsed_entries}
 
     return user_id, tracks_to_ratings
@@ -80,11 +78,11 @@ def parse_user_rating_history(
 
 def parse_test_case(
     user_id_and_num_tracks_str: str,
-    iter: Iterator[str],
+    lines_iter: Iterator[str],
 ) -> tuple[str, tuple[str, ...]]:
     user_id, num_tracks = user_id_and_num_tracks_str.split("|")
     num_tracks = int(num_tracks)
-    tracks = tuple(next(iter) for _ in range(num_tracks))
+    tracks = tuple(next(lines_iter) for _ in range(num_tracks))
     return user_id, tracks
 
 
@@ -119,39 +117,36 @@ def load_data() -> (
 ):
     if not cache_exists():
         print("generating cache\n")
-        track_data = TRACK_FILENAME.read_text()
-        track_map = dict(parse_track_entry(line) for line in track_data.splitlines())
-        track_pickle = pickle.dumps(track_map)
-        TRACK_CACHE_FILENAME.write_bytes(track_pickle)
 
-        album_data = ALBUM_FILENAME.read_text()
-        album_map = dict(parse_album_entry(line) for line in album_data.splitlines())
-        album_pickle = pickle.dumps(album_map)
-        ALBUM_CACHE_FILENAME.write_bytes(album_pickle)
+        track_map = dict(
+            parse_track_entry(line)
+            for line in TRACK_FILENAME.read_text(encoding="utf-8").splitlines()
+        )
+        TRACK_CACHE_FILENAME.write_bytes(pickle.dumps(track_map))
 
-        artist_data = ARTIST_FILENAME.read_text()
-        artist_set = set(artist_data.splitlines())
-        artist_pickle = pickle.dumps(artist_set)
-        ARTIST_CACHE_FILENAME.write_bytes(artist_pickle)
+        album_map = dict(
+            parse_album_entry(line)
+            for line in ALBUM_FILENAME.read_text(encoding="utf-8").splitlines()
+        )
+        ALBUM_CACHE_FILENAME.write_bytes(pickle.dumps(album_map))
 
-        genre_data = GENRE_FILENAME.read_text()
-        genre_set = set(genre_data.splitlines())
-        genre_pickle = pickle.dumps(genre_set)
-        GENRE_CACHE_FILENAME.write_bytes(genre_pickle)
+        artist_set = set(ARTIST_FILENAME.read_text(encoding="utf-8").splitlines())
+        ARTIST_CACHE_FILENAME.write_bytes(pickle.dumps(artist_set))
 
-        train_data_iter = iter(TRAIN_FILENAME.read_text().splitlines())
+        genre_set = set(GENRE_FILENAME.read_text(encoding="utf-8").splitlines())
+        GENRE_CACHE_FILENAME.write_bytes(pickle.dumps(genre_set))
+
+        train_data_iter = iter(TRAIN_FILENAME.read_text(encoding="utf-8").splitlines())
         train_map = dict(
             parse_user_rating_history(line, train_data_iter) for line in train_data_iter
         )
-        train_pickle = pickle.dumps(train_map)
-        TRAIN_CACHE_FILENAME.write_bytes(train_pickle)
+        TRAIN_CACHE_FILENAME.write_bytes(pickle.dumps(train_map))
 
-        test_data_iter = iter(TEST_FILENAME.read_text().splitlines())
+        test_data_iter = iter(TEST_FILENAME.read_text(encoding="utf-8").splitlines())
         test_map = dict(
             parse_test_case(line, test_data_iter) for line in test_data_iter
         )
-        test_pickle = pickle.dumps(test_map)
-        TEST_CACHE_FILENAME.write_bytes(test_pickle)
+        TEST_CACHE_FILENAME.write_bytes(pickle.dumps(test_map))
 
     else:
         print("loading from cache\n")
