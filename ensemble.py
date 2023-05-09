@@ -97,7 +97,7 @@ s_ensemble_sorted = (
 )
 print(s_ensemble_sorted.head(12))
 
-# choosing values of 0 or one for each entry
+# choosing values of zero or one for each entry
 write_zero = True
 predictors = []
 for index, row in s_ensemble_sorted.iterrows():

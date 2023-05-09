@@ -1,14 +1,18 @@
-import glob
 import csv
+import glob
 import os
 
-submissions_folder = "submissions"
+SUBMISSIONS_FOLDER = "submissions"
 
-data_list = {os.path.splitext(os.path.basename(file))[0].split("-")[1]: dict(csv.reader(open(file))) for file in
-             glob.glob("submissions/results-*.csv")}
+data_list = {
+    os.path.splitext(os.path.basename(file))[0].split("-")[1]: dict(
+        csv.reader(open(file))
+    )
+    for file in glob.glob("submissions/results-*.csv")
+}
 for i, fileone_ver in enumerate(data_list):
     is_duplicate = False
-    for j, filetwo_ver in enumerate(list(data_list.keys())[i+1:]):
+    for j, filetwo_ver in enumerate(list(data_list.keys())[i + 1 :]):
         # if i == j:
         #     continue
         is_identical = True  # assume identical, look for counterexamples

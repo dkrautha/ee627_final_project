@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 
+# This file comes directly from canvas, we had no part in writing it
+
 import numpy
 
-dataDir = './data/'
-file_name_test = dataDir + 'testTrack_hierarchy.txt'
-file_name_train = dataDir + 'trainIdx2_matrix.txt'
-output_file = dataDir + 'output1.txt'
+dataDir = "./data/"
+file_name_test = dataDir + "testTrack_hierarchy.txt"
+file_name_train = dataDir + "trainIdx2_matrix.txt"
+output_file = dataDir + "output1.txt"
 
-fTest = open(file_name_test, 'r')
-fTrain = open(file_name_train, 'r')
+fTest = open(file_name_test, "r")
+fTrain = open(file_name_train, "r")
 Trainline = fTrain.readline()
-fOut = open(output_file, 'w')
+fOut = open(output_file, "w")
 
 trackID_vec = [0] * 6
 albumID_vec = [0] * 6
@@ -20,7 +22,7 @@ lastUserID = -1
 user_rating_inTrain = numpy.zeros(shape=(6, 3))
 
 for line in fTest:
-    arr_test = line.strip().split('|')
+    arr_test = line.strip().split("|")
     userID = arr_test[0]
     trackID = arr_test[1]
     albumID = arr_test[2]
@@ -39,7 +41,7 @@ for line in fTest:
     if ii == 6:
         while Trainline:
             # for Trainline in fTrain:
-            arr_train = Trainline.strip().split('|')
+            arr_train = Trainline.strip().split("|")
             trainUserID = arr_train[0]
             trainItemID = arr_train[1]
             trainRating = arr_train[2]
@@ -55,9 +57,16 @@ for line in fTest:
                         user_rating_inTrain[nn, 1] = trainRating
             if trainUserID > userID:
                 for nn in range(0, 6):
-                    outStr = str(userID) + '|' + str(trackID_vec[nn]) + '|' + str(
-                        user_rating_inTrain[nn, 0]) + '|' + str(user_rating_inTrain[nn, 1])
-                    fOut.write(outStr + '\n')
+                    outStr = (
+                        str(userID)
+                        + "|"
+                        + str(trackID_vec[nn])
+                        + "|"
+                        + str(user_rating_inTrain[nn, 0])
+                        + "|"
+                        + str(user_rating_inTrain[nn, 1])
+                    )
+                    fOut.write(outStr + "\n")
                 break
 
 fTest.close()
